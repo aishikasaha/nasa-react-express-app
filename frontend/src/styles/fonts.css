@@ -1,0 +1,213 @@
+/* Space-Themed Font Variables */
+:root {
+  /* Primary Display Fonts */
+  --font-heading-primary: 'Orbitron', 'Courier New', monospace;      /* Main headings - futuristic */
+  --font-heading-secondary: 'Exo 2', 'Arial', sans-serif;            /* Secondary headings - clean sci-fi */
+  --font-heading-accent: 'Audiowide', 'Impact', sans-serif;          /* Special accents - bold sci-fi */
+  
+  /* Body Text Fonts */
+  --font-body-primary: 'Rajdhani', 'Arial', sans-serif;              /* Main body text - readable sci-fi */
+  --font-body-secondary: 'Jura', 'Helvetica', sans-serif;            /* Secondary body text */
+  --font-body-elegant: 'Saira', 'Georgia', serif;                    /* Elegant descriptions */
+  
+  /* Special Purpose Fonts */
+  --font-mono: 'Space Mono', 'Courier New', monospace;               /* Code/data display */
+  --font-ui: 'Electrolize', 'Arial', sans-serif;                     /* UI elements */
+  --font-tech: 'Aldrich', 'Arial', sans-serif;                       /* Technical data */
+  --font-retro: 'Michroma', 'Arial', sans-serif;                     /* Retro space aesthetic */
+  
+  /* Font Weight Variables */
+  --weight-light: 300;
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-black: 900;
+  
+  /* Font Size System */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.875rem;    /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg: 1.125rem;    /* 18px */
+  --text-xl: 1.25rem;     /* 20px */
+  --text-2xl: 1.5rem;     /* 24px */
+  --text-3xl: 1.875rem;   /* 30px */
+  --text-4xl: 2.25rem;    /* 36px */
+  --text-5xl: 3rem;       /* 48px */
+  --text-6xl: 3.75rem;    /* 60px */
+  --text-7xl: 4.5rem;     /* 72px */
+  
+  /* Letter Spacing for Futuristic Feel */
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.1em;
+}
+
+/* Base Font Classes */
+.font-heading-primary {
+  font-family: var(--font-heading-primary);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.font-heading-secondary {
+  font-family: var(--font-heading-secondary);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-normal);
+}
+
+.font-heading-accent {
+  font-family: var(--font-heading-accent);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+}
+
+.font-body-primary {
+  font-family: var(--font-body-primary);
+  font-weight: var(--weight-normal);
+  letter-spacing: var(--tracking-normal);
+}
+
+.font-body-secondary {
+  font-family: var(--font-body-secondary);
+  font-weight: var(--weight-normal);
+  letter-spacing: var(--tracking-normal);
+}
+
+.font-body-elegant {
+  font-family: var(--font-body-elegant);
+  font-weight: var(--weight-normal);
+  letter-spacing: var(--tracking-normal);
+  line-height: 1.6;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+  letter-spacing: var(--tracking-normal);
+}
+
+.font-ui {
+  font-family: var(--font-ui);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.font-tech {
+  font-family: var(--font-tech);
+  font-weight: var(--weight-normal);
+  letter-spacing: var(--tracking-wider);
+}
+
+.font-retro {
+  font-family: var(--font-retro);
+  font-weight: var(--weight-normal);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+}
+
+/* Special Text Effects */
+.text-glow {
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor;
+}
+
+.text-glow-blue {
+  text-shadow: 
+    0 0 5px #00d4ff,
+    0 0 10px #00d4ff,
+    0 0 20px #00d4ff;
+}
+
+.text-glow-green {
+  text-shadow: 
+    0 0 5px #4ecdc4,
+    0 0 10px #4ecdc4,
+    0 0 20px #4ecdc4;
+}
+
+.text-glow-red {
+  text-shadow: 
+    0 0 5px #ff6b6b,
+    0 0 10px #ff6b6b,
+    0 0 20px #ff6b6b;
+}
+
+.text-cyber {
+  background: linear-gradient(45deg, #00d4ff, #4ecdc4, #ff6b6b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: cyber-glow 3s ease-in-out infinite alternate;
+}
+
+@keyframes cyber-glow {
+  from {
+    filter: hue-rotate(0deg) brightness(1);
+  }
+  to {
+    filter: hue-rotate(180deg) brightness(1.2);
+  }
+}
+
+.text-hologram {
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(0, 212, 255, 0.8) 50%,
+    transparent 70%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: hologram-scan 2s linear infinite;
+}
+
+@keyframes hologram-scan {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Responsive Font Sizes */
+@media (max-width: 768px) {
+  :root {
+    --text-xs: 0.7rem;
+    --text-sm: 0.8rem;
+    --text-base: 0.9rem;
+    --text-lg: 1rem;
+    --text-xl: 1.1rem;
+    --text-2xl: 1.3rem;
+    --text-3xl: 1.6rem;
+    --text-4xl: 2rem;
+    --text-5xl: 2.5rem;
+    --text-6xl: 3rem;
+    --text-7xl: 3.5rem;
+  }
+}
+
+/* Font Loading Optimization */
+@font-face {
+  font-family: 'Orbitron';
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Exo 2';
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Mono';
+  font-display: swap;
+}

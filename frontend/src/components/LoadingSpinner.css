@@ -1,0 +1,65 @@
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+}
+
+.loading-spinner.small {
+  padding: 1rem;
+}
+
+.loading-spinner.large {
+  padding: 5rem;
+}
+
+.spinner {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.spinner > div {
+  width: 12px;
+  height: 12px;
+  background-color: #00d4ff;
+  border-radius: 100%;
+  animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+}
+
+.spinner .bounce1 {
+  animation-delay: -0.32s;
+}
+
+.spinner .bounce2 {
+  animation-delay: -0.16s;
+  background-color: #4ecdc4;
+}
+
+.spinner .bounce3 {
+  background-color: #ff6b6b;
+}
+
+@keyframes sk-bouncedelay {
+  0%, 80%, 100% {
+    transform: scale(0);
+  } 40% {
+    transform: scale(1.0);
+  }
+}
+
+.loading-message {
+  margin-top: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+}
+
+.loading-spinner.small .loading-message {
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+.loading-spinner.large .loading-message {
+  font-size: 1.2rem;
+  margin-top: 1.5rem;
+}

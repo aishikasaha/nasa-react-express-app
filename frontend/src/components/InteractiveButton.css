@@ -1,0 +1,183 @@
+.interactive-button {
+  position: relative;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 1rem;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: white;
+  background: linear-gradient(45deg, #00d4ff, #4ecdc4);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  min-width: 120px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.interactive-button.primary {
+  background: linear-gradient(45deg, #00d4ff, #4ecdc4);
+  box-shadow: 
+    0 4px 15px rgba(0, 212, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.interactive-button.secondary {
+  background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+  box-shadow: 
+    0 4px 15px rgba(255, 107, 107, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.interactive-button.success {
+  background: linear-gradient(45deg, #4ecdc4, #26d0ce);
+  box-shadow: 
+    0 4px 15px rgba(78, 205, 196, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.interactive-button.warning {
+  background: linear-gradient(45deg, #feca57, #ff9ff3);
+  box-shadow: 
+    0 4px 15px rgba(254, 202, 87, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.interactive-button.disabled {
+  background: linear-gradient(45deg, #666, #888);
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-ui);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+}
+
+.button-icon {
+  font-size: 1.2rem;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+}
+
+.button-glow {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #00d4ff, #4ecdc4, #ff6b6b, #4ecdc4);
+  border-radius: 1rem;
+  z-index: -1;
+  filter: blur(8px);
+  opacity: 0.7;
+}
+
+.interactive-button:hover:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 25px rgba(0, 212, 255, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.interactive-button:active:not(.disabled) {
+  transform: translateY(0px);
+  box-shadow: 
+    0 4px 15px rgba(0, 212, 255, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Special button effects */
+.interactive-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.2), 
+    transparent
+  );
+  transition: left 0.5s;
+  z-index: 1;
+}
+
+.interactive-button:hover::before {
+  left: 100%;
+}
+
+/* Typography specific animations */
+.button-content {
+  animation: button-text-glow 3s ease-in-out infinite alternate;
+}
+
+@keyframes button-text-glow {
+  from {
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  }
+  to {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  }
+}
+
+/* Responsive typography */
+@media (max-width: 768px) {
+  .interactive-button {
+    font-size: var(--text-xs);
+    padding: 0.6rem 1.2rem;
+    min-width: 100px;
+  }
+  
+  .button-icon {
+    font-size: 1rem;
+  }
+}
+
+/* Accessibility enhancements */
+.interactive-button:focus {
+  outline: 2px solid rgba(0, 212, 255, 0.8);
+  outline-offset: 2px;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interactive-button {
+    transition: none;
+  }
+  
+  .interactive-button::before {
+    display: none;
+  }
+  
+  .button-content {
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .interactive-button {
+    border: 2px solid #ffffff;
+    color: #ffffff;
+    text-shadow: 1px 1px 2px #000000;
+  }
+  
+  .interactive-button:hover {
+    background: #ffffff;
+    color: #000000;
+  }
+}
