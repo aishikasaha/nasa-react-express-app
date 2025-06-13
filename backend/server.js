@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 
 // Load environment variables
 dotenv.config();
@@ -16,9 +17,11 @@ const NASA_API_KEY = process.env.NASA_API_KEY || 'DEMO_KEY';
 // Security middleware
 app.use(helmet());
 
-// CORS middleware
+// CORS middleware - Updated for production deployment
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL, /\.vercel\.app$/, /\.onrender\.com$/]
+    : ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true
 }));
 
@@ -53,13 +56,51 @@ app.use((req, res, next) => {
   next();
 });
 
+// ROOT ROUTE - This was missing!
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: '🚀 NASA API Backend',
+    version: '1.0.0',
+    description: 'Express backend for NASA React app',
+    endpoints: {
+      health: '/health',
+      apod: '/api/apod',
+      randomApod: '/api/apod/random',
+      marsPhotos: '/api/mars/photos',
+      nearEarthObjects: '/api/neo',
+      search: '/api/search'
+    },
+    documentation: 'https://api.nasa.gov/',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
     service: 'NASA API Backend',
-    nasa_key_status: NASA_API_KEY !== 'DEMO_KEY' ? 'Real Key' : 'Demo Key'
+    nasa_key_status: NASA_API_KEY !== 'DEMO_KEY' ? 'Real Key' : 'Demo Key',
+    uptime: process.uptime(),
+    memory: process.memoryUsage()
+  });
+});
+
+// API Documentation endpoint
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'NASA API Endpoints',
+    endpoints: {
+      'GET /api/apod': 'Astronomy Picture of the Day (optional ?date=YYYY-MM-DD)',
+      'GET /api/apod/random': 'Random APOD from past year',
+      'GET /api/mars/photos': 'Mars Rover Photos (optional ?rover=curiosity&sol=1000&page=1)',
+      'GET /api/neo': 'Near Earth Objects (optional ?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD)',
+      'GET /api/search': 'NASA Image/Video Library Search (required ?q=search_term&media_type=image)'
+    },
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -228,6 +269,30 @@ app.get('/api/search', async (req, res, next) => {
   }
 });
 
+// Serve static files from React build (for full-stack deployment)
+if (process.env.NODE_ENV === 'production' && process.env.SERVE_STATIC === 'true') {
+  // Serve static files from the React app build directory
+  app.use(express.static(path.join(__dirname, '../client/build')));
+  
+  // The "catchall" handler: send back React's index.html file for non-API routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+  });
+} else {
+  // 404 handler for API-only deployment
+  app.use('*', (req, res) => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(`404: ${req.method} ${req.originalUrl}`);
+    }
+    res.status(404).json({ 
+      success: false,
+      error: 'Route not found',
+      path: req.originalUrl,
+      message: 'This endpoint does not exist. Check /api for available endpoints.'
+    });
+  });
+}
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   if (process.env.NODE_ENV !== 'test') {
@@ -264,25 +329,15 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  if (process.env.NODE_ENV !== 'test') {
-    console.log(`404: ${req.method} ${req.originalUrl}`);
-  }
-  res.status(404).json({ 
-    success: false,
-    error: 'Route not found',
-    path: req.originalUrl 
-  });
-});
-
 // Start server only if not in test environment
 let server;
 if (process.env.NODE_ENV !== 'test') {
   server = app.listen(PORT, () => {
     console.log(`🚀 NASA API Backend running on http://localhost:${PORT}`);
     console.log(`Health check: http://localhost:${PORT}/health`);
+    console.log(`API Documentation: http://localhost:${PORT}/api`);
     console.log(`NASA API Key: ${NASA_API_KEY === 'DEMO_KEY' ? 'Using DEMO_KEY (limited)' : 'Using real API key'}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }
 

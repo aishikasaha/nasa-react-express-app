@@ -1,5 +1,4 @@
 
-
 # 🌌 NASA Data Explorer - Full-Stack Space Application
 
 [![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
