@@ -130,8 +130,6 @@ const AIInsights = ({ analysis, loading, onRefresh }) => {
                   </span>
                 </div>
               </div>
-
-        
             </motion.div>
           )}
 
