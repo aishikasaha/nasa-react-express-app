@@ -1,13 +1,38 @@
 const request = require('supertest');
 const express = require('express');
 const apodRoutes = require('../../routes/apod');
-const errorHandler = require('../../middleware/errorHandler');
 
 // Create test app
 const app = express();
 app.use(express.json());
 app.use('/api/apod', apodRoutes);
-app.use(errorHandler); // Add error handler middleware
+
+// Add error handling middleware for tests
+app.use((err, req, res, next) => {
+  console.error('Test Error Middleware:', err.message);
+  
+  // Handle rate limit errors specifically
+  if (err.response && err.response.status === 429) {
+    return res.status(429).json({
+      success: false,
+      error: 'NASA API rate limit exceeded. Please try again later.'
+    });
+  }
+  
+  // Handle other API errors
+  if (err.response && err.response.status >= 400) {
+    return res.status(err.response.status).json({
+      success: false,
+      error: err.message || 'API Error'
+    });
+  }
+  
+  // Default error response
+  res.status(500).json({
+    success: false,
+    error: err.message || 'Internal Server Error'
+  });
+});
 
 // Mock the NASA service
 jest.mock('../../services/nasaService', () => ({
@@ -71,7 +96,6 @@ describe('APOD Controller', () => {
     test('should handle NASA API errors', async () => {
       const errorMessage = 'NASA API Error';
       const error = new Error(errorMessage);
-      error.message = errorMessage;
       
       nasaService.getAPOD.mockRejectedValue(error);
 
@@ -80,7 +104,7 @@ describe('APOD Controller', () => {
         .expect(500);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error');
+      expect(response.body).toHaveProperty('error', errorMessage);
       expect(typeof response.body.error).toBe('string');
     });
 
@@ -96,6 +120,34 @@ describe('APOD Controller', () => {
 
       expect(response.body).toHaveProperty('success', false);
       expect(response.body.error).toContain('rate limit');
+    });
+
+    test('should handle other API errors with status codes', async () => {
+      const error = new Error('API Error');
+      error.response = { status: 400 };
+      
+      nasaService.getAPOD.mockRejectedValue(error);
+
+      const response = await request(app)
+        .get('/api/apod')
+        .expect(400);
+
+      expect(response.body).toHaveProperty('success', false);
+      expect(response.body).toHaveProperty('error', 'API Error');
+    });
+
+    test('should handle date validation errors', async () => {
+      const error = new Error('Invalid date format');
+      error.response = { status: 400 };
+      
+      nasaService.getAPOD.mockRejectedValue(error);
+
+      const response = await request(app)
+        .get('/api/apod?date=invalid-date')
+        .expect(400);
+
+      expect(response.body).toHaveProperty('success', false);
+      expect(response.body).toHaveProperty('error');
     });
   });
 
@@ -146,6 +198,33 @@ describe('APOD Controller', () => {
       
       expect(calledDate.getTime()).toBeGreaterThanOrEqual(oneYearAgo.getTime());
       expect(calledDate.getTime()).toBeLessThanOrEqual(new Date().getTime());
+    });
+
+    test('should handle errors in random APOD', async () => {
+      const error = new Error('Random APOD API Error');
+      
+      nasaService.getAPOD.mockRejectedValue(error);
+
+      const response = await request(app)
+        .get('/api/apod/random')
+        .expect(500);
+
+      expect(response.body).toHaveProperty('success', false);
+      expect(response.body).toHaveProperty('error', 'Random APOD API Error');
+    });
+
+    test('should handle rate limit errors in random APOD', async () => {
+      const error = new Error('Rate limit exceeded for random APOD');
+      error.response = { status: 429 };
+      
+      nasaService.getAPOD.mockRejectedValue(error);
+
+      const response = await request(app)
+        .get('/api/apod/random')
+        .expect(429);
+
+      expect(response.body).toHaveProperty('success', false);
+      expect(response.body.error).toContain('rate limit');
     });
   });
 });

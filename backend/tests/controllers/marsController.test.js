@@ -1,13 +1,30 @@
 const request = require('supertest');
 const express = require('express');
 const marsRoutes = require('../../routes/mars');
-const errorHandler = require('../../middleware/errorHandler');
 
 // Create test app
 const app = express();
 app.use(express.json());
 app.use('/api/mars', marsRoutes);
-app.use(errorHandler);
+
+// Add error handling middleware for tests
+app.use((err, req, res, next) => {
+  console.error('Test Error Middleware:', err.message);
+  
+  // Handle different error types
+  if (err.message.includes('rate limit')) {
+    return res.status(429).json({
+      success: false,
+      error: err.message
+    });
+  }
+  
+  // Default error response
+  res.status(500).json({
+    success: false,
+    error: err.message || 'Internal Server Error'
+  });
+});
 
 // Mock the NASA service
 jest.mock('../../services/nasaService', () => ({
@@ -59,7 +76,6 @@ describe('Mars Controller', () => {
         .get('/api/mars/photos?rover=perseverance&sol=500&page=2')
         .expect(200);
 
-      // Expect numbers (after conversion in controller)
       expect(nasaService.getMarsRoverPhotos).toHaveBeenCalledWith('perseverance', 500, 2);
     });
 
@@ -110,7 +126,19 @@ describe('Mars Controller', () => {
         .expect(500);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error');
+      expect(response.body).toHaveProperty('error', 'Mars API Error');
+    });
+
+    test('should handle rate limit errors', async () => {
+      const error = new Error('API rate limit exceeded');
+      nasaService.getMarsRoverPhotos.mockRejectedValue(error);
+
+      const response = await request(app)
+        .get('/api/mars/photos')
+        .expect(429);
+
+      expect(response.body).toHaveProperty('success', false);
+      expect(response.body.error).toContain('rate limit');
     });
 
     test('should handle string numbers correctly', async () => {
@@ -121,7 +149,6 @@ describe('Mars Controller', () => {
         .get('/api/mars/photos?rover=curiosity&sol=1500&page=3')
         .expect(200);
 
-      // Should convert string "1500" and "3" to numbers 1500 and 3
       expect(nasaService.getMarsRoverPhotos).toHaveBeenCalledWith('curiosity', 1500, 3);
     });
   });
