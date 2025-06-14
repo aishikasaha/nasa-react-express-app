@@ -227,7 +227,7 @@ nasa-data-explorer/
 
 #### Backend Configuration (`backend/.env`)
 ```env
-PORT=5000                           # Server port
+PORT=5001                           # Server port
 NODE_ENV=development                # Environment (development/production)
 NASA_API_KEY=your_api_key_here     # NASA API key (required)
 FRONTEND_URL=http://localhost:3000  # Frontend URL for CORS
@@ -235,7 +235,7 @@ FRONTEND_URL=http://localhost:3000  # Frontend URL for CORS
 
 #### Frontend Configuration (`frontend/.env`)
 ```env
-REACT_APP_API_URL=http://localhost:5000/api  # Backend API endpoint
+REACT_APP_API_URL=http://localhost:5001/api  # Backend API endpoint
 ```
 
 ### NASA API Configuration
@@ -338,24 +338,28 @@ REACT_APP_API_URL=http://localhost:5000/api  # Backend API endpoint
 ## 📱 Screenshots
 
 ### 🖥️ Desktop Experience
-![Desktop Dashboard](screenshots/desktop-dashboard.png)
+![Desktop Dashboard](page1.png)
 *Main dashboard with space-themed interface*
 
-![APOD View](screenshots/apod-view.png)
+![APOD View](apod.png)
 *Astronomy Picture of the Day with AI insights*
 
-![Mars Gallery](screenshots/mars-gallery.png)
+![Mars Gallery](mars.png)
 *Interactive Mars rover photo gallery*
 
+![Neo](neo.png)
+*Near objects*
+
 ### 📱 Mobile Experience
-![Mobile Dashboard](screenshots/mobile-dashboard.png)
+![Mobile Dashboard](mobile1.jpeg)
+![Mobile Dashboard](mobile2.jpeg)
 *Responsive mobile interface*
 
 ### 🤖 AI Features
-![AI Analysis](screenshots/ai-analysis.png)
+![AI Analysis](ai.png)
 *AI-powered image analysis and insights*
 
-![AI Chat](screenshots/ai-chat.png)
+![AI Chat](ai2.png)
 *Interactive space assistant chatbot*
 
 ## 🧪 Testing
