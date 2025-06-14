@@ -12,9 +12,9 @@
 
 ## 🚀 Live Demo
 
-- **🌐 Frontend Application**: [Your Deployed Frontend URL]
-- **⚡ Backend API**: [Your Deployed Backend URL]
-- **📊 API Health Check**: [Your Backend URL]/health
+- **🌐 Frontend Application**: [[Your Deployed Frontend URL](https://nasa-react-express-app-1.onrender.com)]
+- **⚡ Backend API**: [[Your Deployed Backend URL](https://nasa-react-express-app.onrender.com)]
+- **📊 API Health Check**: [[Your Backend URL](https://nasa-react-express-app.onrender.com)]/health
 
 ## 📖 Table of Contents
 
@@ -172,15 +172,17 @@ nasa-data-explorer/
 │   │   ├── 📄 apodController.js    # APOD endpoint logic
 │   │   ├── 📄 marsController.js    # Mars rover endpoints
 │   │   └── 📄 neoController.js     # Near Earth Objects
-│   ├── 📂 middleware/              # Custom middleware
-│   │   ├── 📄 errorHandler.js      # Global error handling
-│   │   └── 📄 rateLimiter.js       # Rate limiting
 │   ├── 📂 routes/                  # API route definitions
 │   │   ├── 📄 apod.js              # APOD routes
 │   │   ├── 📄 mars.js              # Mars rover routes
 │   │   └── 📄 neo.js               # NEO routes
 │   ├── 📂 services/                # Business logic
 │   │   └── 📄 nasaService.js       # NASA API integration
+│   ├── 📂 tests/                   # Test files
+│   │   ├── 📂 controllers/
+│   │   ├── 📂 integration/
+│   │   ├── 📂 services/
+│   │   └── 📄 setup.js
 │   ├── 📂 utils/                   # Utilities
 │   │   └── 📄 logger.js            # Logging system
 │   ├── 📄 server.js                # Main server file
@@ -189,7 +191,11 @@ nasa-data-explorer/
 ├── 📂 frontend/                    # React frontend application
 │   ├── 📂 public/                  # Static assets
 │   │   ├── 📄 index.html           # HTML template
-│   │   └── 📄 favicon.ico          # App icon
+│   │   ├── 📄 favicon.ico          # App icon
+│   │   ├── 📄 logo192.png          # App icons
+│   │   ├── 📄 logo512.png          # App icons
+│   │   ├── 📄 manifest.json        # PWA config
+│   │   └── 📄 robots.txt           # SEO config
 │   ├── 📂 src/                     # Source code
 │   │   ├── 📂 components/          # React components
 │   │   │   ├── 📄 Dashboard.js     # Main navigation
@@ -215,9 +221,13 @@ nasa-data-explorer/
 │   │   ├── 📄 App.css              # Global styles
 │   │   └── 📄 index.js             # App entry point
 │   ├── 📄 package.json             # Frontend dependencies
+│   ├── 📄 package-lock.json        # Lock file
 │   └── 📄 .env                     # Frontend configuration
 ├── 📄 package.json                 # Root package management
-├── 📄 README.md                    # This file
+├── 📄 package-lock.json            # Root lock file
+├── 📄 yarn.lock                    # Yarn lock file
+├── 📄 README.md                    # Project documentation
+├── 📄 vercel.json                  # Deployment config
 └── 📄 .gitignore                   # Git ignore rules
 ```
 
@@ -351,15 +361,15 @@ REACT_APP_API_URL=http://localhost:5001/api  # Backend API endpoint
 *Near objects*
 
 ### 📱 Mobile Experience
-![Mobile Dashboard](mobile1.jpeg)
+![Mobile Dashboard](mobil1.jpeg)
 ![Mobile Dashboard](mobile2.jpeg)
 *Responsive mobile interface*
 
 ### 🤖 AI Features
-![AI Analysis](ai.png)
+![AI Analysis](ai2.png)
 *AI-powered image analysis and insights*
 
-![AI Chat](ai2.png)
+![AI Chat](ai.png)
 *Interactive space assistant chatbot*
 
 ## 🧪 Testing
