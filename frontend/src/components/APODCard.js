@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAPOD } from '../hooks/useNasaData';
 import LoadingAnimation from './LoadingAnimation';
@@ -31,7 +31,7 @@ const APODCard = () => {
     
     setAiLoading(true);
     try {
-      const [imageDescription, sentiment, textAnalysis, tips] = await Promise.all([
+      const [ sentiment, textAnalysis, tips] = await Promise.all([
         aiService.analyzeImage(data.url),
         aiService.analyzeSentiment(data.explanation),
         Promise.resolve(aiService.analyzeTextComplexity(data.explanation)),
@@ -39,7 +39,7 @@ const APODCard = () => {
       ]);
   
       setAiAnalysis({
-        imageDescription,
+      
         sentiment,
         textAnalysis,
         tips,
@@ -362,9 +362,7 @@ const APODCard = () => {
               >
                 <h3>{data.title}</h3>
                 <p>{data.date}</p>
-                {aiAnalysis && (
-                  <p className="ai-description">🤖 {aiAnalysis.imageDescription}</p>
-                )}
+            
               </motion.div>
             </motion.div>
           </motion.div>

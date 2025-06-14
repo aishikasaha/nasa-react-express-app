@@ -131,12 +131,7 @@ const AIInsights = ({ analysis, loading, onRefresh }) => {
                 </div>
               </div>
 
-              {analysis.imageDescription && (
-                <div className="ai-section">
-                  <h4>🖼️ AI Image Description</h4>
-                  <p className="ai-description">{analysis.imageDescription}</p>
-                </div>
-              )}
+        
             </motion.div>
           )}
 

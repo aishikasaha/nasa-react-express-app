@@ -1,47 +1,27 @@
-// Using Hugging Face's free inference API
+// Using Hugging Face's inference API
 class AIService {
   constructor() {
     this.HF_API_URL = 'https://api-inference.huggingface.co/models';
+    this.API_TOKEN = process.env.REACT_APP_HF_API_TOKEN;
     this.isLoading = false;
   }
 
-  // Image captioning using BLIP model (free)
-  async analyzeImage(imageUrl) {
-    try {
-      this.isLoading = true;
-      
-      // Convert image URL to blob
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      
-      // Send to Hugging Face API
-      const result = await fetch(`${this.HF_API_URL}/Salesforce/blip-image-captioning-large`, {
-        method: 'POST',
-        body: blob,
-        headers: {
-          'Content-Type': 'application/octet-stream',
-        }
-      });
-      
-      const data = await result.json();
-      return data[0]?.generated_text || 'Unable to analyze image';
-    } catch (error) {
-      console.error('AI Image Analysis Error:', error);
-      return 'AI analysis temporarily unavailable';
-    } finally {
-      this.isLoading = false;
-    }
-  }
+  
 
   // Text summarization using free model
   async summarizeText(text, maxLength = 100) {
     try {
       if (text.length < maxLength) return text;
       
+      if (!this.API_TOKEN) {
+        return text; // Return original text if no token
+      }
+      
       const response = await fetch(`${this.HF_API_URL}/facebook/bart-large-cnn`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.API_TOKEN}`
         },
         body: JSON.stringify({
           inputs: text,
@@ -51,6 +31,10 @@ class AIService {
           }
         })
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       
       const data = await response.json();
       return data[0]?.summary_text || text;
@@ -63,13 +47,22 @@ class AIService {
   // Sentiment analysis for text
   async analyzeSentiment(text) {
     try {
+      if (!this.API_TOKEN) {
+        return { label: 'NEUTRAL', score: 0.5 }; // Return neutral if no token
+      }
+      
       const response = await fetch(`${this.HF_API_URL}/cardiffnlp/twitter-roberta-base-sentiment-latest`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.API_TOKEN}`
         },
         body: JSON.stringify({ inputs: text })
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       
       const data = await response.json();
       return data[0] || { label: 'NEUTRAL', score: 0.5 };
@@ -79,7 +72,6 @@ class AIService {
     }
   }
 
-  
   // Local browser-based text analysis (no API needed)
   analyzeTextComplexity(text) {
     const words = text.split(/\s+/).length;
@@ -131,6 +123,13 @@ class AIService {
     const key = Object.keys(tips).find(k => topic.toLowerCase().includes(k)) || 'default';
     return tips[key];
   }
+
+  // Check if AI services are available
+  isAvailable() {
+    return !!this.API_TOKEN;
+  }
 }
 
-export default new AIService();
+// Create a single instance and export it
+const aiService = new AIService();
+export default aiService;

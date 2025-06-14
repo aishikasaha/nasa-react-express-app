@@ -8,7 +8,7 @@ const getAPIBaseURL = () => {
   }
   
   // For local development
-  return 'http://localhost:5000';
+  return 'http://localhost:5001';
 };
 
 const API_BASE_URL = getAPIBaseURL();
