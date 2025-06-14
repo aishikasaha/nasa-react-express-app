@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAPOD } from '../hooks/useNasaData';
 import LoadingAnimation from './LoadingAnimation';
@@ -39,7 +39,7 @@ const APODCard = () => {
       ]);
   
       setAiAnalysis({
-      
+        
         sentiment,
         textAnalysis,
         tips,
@@ -362,7 +362,9 @@ const APODCard = () => {
               >
                 <h3>{data.title}</h3>
                 <p>{data.date}</p>
-            
+                {aiAnalysis && (
+                  <p className="ai-description">🤖 {aiAnalysis.imageDescription}</p>
+                )}
               </motion.div>
             </motion.div>
           </motion.div>

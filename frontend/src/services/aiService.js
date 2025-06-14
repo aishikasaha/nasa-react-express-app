@@ -6,7 +6,44 @@ class AIService {
     this.isLoading = false;
   }
 
-  
+  // Image captioning using BLIP model
+  async analyzeImage(imageUrl) {
+    try {
+      this.isLoading = true;
+      
+      // Check if token exists
+      if (!this.API_TOKEN) {
+        console.warn('No Hugging Face API token found');
+        return 'AI analysis requires API token - please add REACT_APP_HF_API_TOKEN to your .env file';
+      }
+      
+      // Convert image URL to blob
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      // Send to Hugging Face API
+      const result = await fetch(`${this.HF_API_URL}/Salesforce/blip-image-captioning-large`, {
+        method: 'POST',
+        body: blob,
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'Authorization': `Bearer ${this.API_TOKEN}`
+        }
+      });
+      
+      if (!result.ok) {
+        throw new Error(`HTTP ${result.status}: ${result.statusText}`);
+      }
+      
+      const data = await result.json();
+      return data[0]?.generated_text || 'Unable to analyze image';
+    } catch (error) {
+      console.error('AI Image Analysis Error:', error);
+      return 'AI analysis temporarily unavailable';
+    } finally {
+      this.isLoading = false;
+    }
+  }
 
   // Text summarization using free model
   async summarizeText(text, maxLength = 100) {
