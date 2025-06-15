@@ -154,21 +154,8 @@ const Dashboard = () => {
         className="dashboard-header"
         variants={itemVariants}
       >
-        <motion.h1
-          animate={{
-            textShadow: [
-              '0 0 10px rgba(0, 212, 255, 0.5)',
-              '0 0 20px rgba(0, 212, 255, 0.8)',
-              '0 0 10px rgba(0, 212, 255, 0.5)'
-            ]
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        >
-          🌌 NASA Data Explorer
+        <motion.h1>
+         🚀🧑‍🚀 NASA Data Explorer🌌🔭
         </motion.h1>
         <motion.p
           variants={itemVariants}
