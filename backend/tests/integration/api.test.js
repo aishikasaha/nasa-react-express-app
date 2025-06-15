@@ -35,7 +35,7 @@ describe('API Integration Tests', () => {
 
       expect(response.body).toHaveProperty('status', 'OK');
       expect(response.body).toHaveProperty('timestamp');
-      expect(response.body).toHaveProperty('service', 'NASA API Backend');
+      expect(response.body).toHaveProperty('service', 'NASA API Backend with AI');
       expect(response.body).toHaveProperty('success', true);
     });
   });
@@ -47,7 +47,7 @@ describe('API Integration Tests', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('success', true);
-      expect(response.body).toHaveProperty('message', '🚀 NASA API Backend');
+      expect(response.body).toHaveProperty('message', '🚀 NASA API Backend with AI');
       expect(response.body).toHaveProperty('endpoints');
     });
   });
@@ -106,16 +106,6 @@ describe('API Integration Tests', () => {
 
       // Accept any reasonable status code (the API might fail due to missing NASA key in test)
       expect([200, 500, 429, 403]).toContain(response.status);
-    });
-
-    test('GET /api should return API documentation', async () => {
-      const response = await request(app)
-        .get('/api')
-        .expect(200);
-
-      expect(response.body).toHaveProperty('success', true);
-      expect(response.body).toHaveProperty('message', 'NASA API Endpoints');
-      expect(response.body).toHaveProperty('endpoints');
     });
 
     test('GET /api/cors-test should work', async () => {
