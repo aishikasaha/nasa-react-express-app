@@ -217,7 +217,7 @@ cd nasa-data-explorer
 ```bash
 # Backend environment
 cat > backend/.env << EOF
-PORT=5000
+PORT=5001
 NODE_ENV=development
 NASA_API_KEY=your_nasa_api_key_here
 FRONTEND_URL=http://localhost:3000
@@ -225,7 +225,9 @@ EOF
 
 # Frontend environment  
 cat > frontend/.env << EOF
-REACT_APP_API_URL=http://localhost:5000/api
+REACT_APP_NASA_API_KEY=your_nasa_api_key
+REACT_APP_HF_API_TOKEN=your_hugging_face_token
+REACT_APP_API_URL==http://localhost:5001/api
 EOF
 ```
 
@@ -252,8 +254,8 @@ npm run dev
 
 ### 6️⃣ Open Application
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
-- **Health Check**: http://localhost:5000/health
+- **Backend API**: http://localhost:5001
+- **Health Check**: http://localhost:5001/health
 
 ## 📁 Project Structure
 
@@ -337,6 +339,8 @@ FRONTEND_URL=http://localhost:3000  # Frontend URL for CORS
 
 #### Frontend Configuration (`frontend/.env`)
 ```env
+REACT_APP_NASA_API_KEY=your_nasa_api_key
+REACT_APP_HF_API_TOKEN=your_hugging_face_token
 REACT_APP_API_URL=http://localhost:5001/api  # Backend API endpoint
 ```
 
@@ -496,36 +500,45 @@ npm run test:all
 
 ## 🚀 Deployment
 
-### Frontend Deployment (Vercel - Recommended)
+### Frontend Deployment (Render Static Site - Recommended)
+1. **Connect to Render**:
+- Visit [render.com](https://render.com)
+- Sign up with GitHub and connect your repository
+- Click **"New +"** → **"Static Site"**
 
-1. **Install Vercel CLI**:
+2. **Configure Frontend**:
 ```bash
-npm i -g vercel
-```
-
-2. **Deploy**:
-```bash
-cd frontend
-vercel --prod
+Name: nasa-react-app-frontend
+Root Directory: client
+Build Command: npm run build
+Publish Directory: build
 ```
 
 3. **Environment Variables**:
-   - Add `REACT_APP_API_URL` in Vercel dashboard
-   - Point to your deployed backend URL
+- Add `REACT_APP_API_URL` in Render dashboard
+- Point to your deployed backend URL
 
-### Backend Deployment (Railway - Recommended)
+### Backend Deployment (Render Web Service - Recommended)
+1. **Connect to Render**:
+- Visit [render.com](https://render.com)
+- Connect your GitHub repository
+- Click **"New +"** → **"Web Service"**
 
-1. **Connect to Railway**:
-   - Visit [railway.app](https://railway.app)
-   - Connect your GitHub repository
-   - Select backend folder
+2. **Configure Backend**:
+```bash
+Name: nasa-react-app-backend
+Root Directory: server
+Build Command: npm install
+Start Command: npm start
+```
 
-2. **Environment Variables**:
+3. **Environment Variables**:
 ```env
 NODE_ENV=production
 NASA_API_KEY=your_api_key
-FRONTEND_URL=https://your-frontend-domain.vercel.app
-PORT=5000
+FRONTEND_URL=https://your-frontend-domain.onrender.com
+REACT_APP_HF_API_TOKEN=your_hugging_face_token
+PORT=10000
 ```
 
 ### Alternative Deployment Options
