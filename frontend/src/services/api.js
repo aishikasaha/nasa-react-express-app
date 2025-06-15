@@ -1,3 +1,4 @@
+// services/api.js - Updated with AI endpoints
 import axios from 'axios';
 
 // Updated API base URL configuration for separate deployments
@@ -118,7 +119,7 @@ export const testAPIConnection = async () => {
   }
 };
 
-// API methods with detailed logging
+// API methods with detailed logging (Updated with AI integration)
 export const nasaAPI = {
   // Health check
   healthCheck: async () => {
@@ -126,38 +127,38 @@ export const nasaAPI = {
     return api.get('/api/health');
   },
 
-  // APOD endpoints
+  // APOD endpoints (now includes AI analysis)
   getAPOD: async (date) => {
-    console.log('📡 Fetching APOD for date:', date || 'today');
+    console.log('📡 Fetching APOD with AI analysis for date:', date || 'today');
     return api.get('/api/apod', { params: date ? { date } : {} });
   },
 
   getRandomAPOD: async () => {
-    console.log('🎲 Fetching random APOD');
+    console.log('🎲 Fetching random APOD with AI analysis');
     return api.get('/api/apod/random');
   },
 
-  // Mars rover endpoints
+  // Mars rover endpoints (now includes AI analysis)
   getMarsPhotos: async (rover = 'curiosity', sol = 1000, page = 1) => {
-    console.log('🚀 Fetching Mars photos:', { rover, sol, page });
+    console.log('🚀 Fetching Mars photos with AI analysis:', { rover, sol, page });
     return api.get('/api/mars/photos', { 
       params: { rover, sol, page },
       timeout: 60000 // Mars photos can take longer
     });
   },
 
-  // Near Earth Objects
+  // Near Earth Objects (now includes AI analysis)
   getNearEarthObjects: async (startDate, endDate) => {
-    console.log('☄️ Fetching NEO data:', { startDate, endDate });
+    console.log('☄️ Fetching NEO data with AI analysis:', { startDate, endDate });
     const params = {};
     if (startDate) params.start_date = startDate;
     if (endDate) params.end_date = endDate;
     return api.get('/api/neo', { params });
   },
 
-  // NASA Library search
+  // NASA Library search (now includes AI analysis)
   searchLibrary: async (query, mediaType = 'image') => {
-    console.log('🔍 Searching NASA library:', { query, mediaType });
+    console.log('🔍 Searching NASA library with AI analysis:', { query, mediaType });
     if (!query) {
       throw new Error('Search query is required');
     }

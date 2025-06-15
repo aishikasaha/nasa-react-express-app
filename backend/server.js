@@ -109,7 +109,7 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('combined'));
 }
 
-// Body parsing middleware
+// Body parsing middleware - MUST come before routes that need to read request body
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -127,35 +127,62 @@ app.use((req, res, next) => {
   next();
 });
 
+// Import services after middleware setup
+const nasaService = require('./services/nasaService');
+const aiService = require('./services/aiService');
+
+// Try to import AI routes, with fallback if files don't exist
+let aiRoutes;
+try {
+  aiRoutes = require('./routes/aiRoutes');
+  console.log('✅ AI routes loaded successfully');
+} catch (error) {
+  console.log('⚠️ AI routes not found, using inline routes:', error.message);
+  aiRoutes = null;
+}
+
 // ROOT ROUTE
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: '🚀 NASA API Backend',
-    version: '1.0.0',
-    description: 'Express backend for NASA React app',
-    cors: 'Configured for separate frontend deployment',
+    message: '🚀 NASA API Backend with AI',
+    version: '2.0.0',
+    description: 'Express backend for NASA React app with AI capabilities',
     endpoints: {
       health: '/api/health',
       apod: '/api/apod',
       randomApod: '/api/apod/random',
       marsPhotos: '/api/mars/photos',
       nearEarthObjects: '/api/neo',
-      search: '/api/search'
+      search: '/api/search',
+      ai: '/api/ai/*'
+    },
+    aiEndpoints: {
+      status: '/api/ai/status',
+      health: '/api/ai/health',
+      analyze: '/api/ai/analyze',
+      batch: '/api/ai/batch',
+      imageAnalyze: '/api/ai/image/analyze',
+      textAnalyze: '/api/ai/text/analyze',
+      summarize: '/api/ai/text/summarize',
+      sentiment: '/api/ai/text/sentiment',
+      complexity: '/api/ai/text/complexity',
+      tips: '/api/ai/tips/:topic'
     },
     documentation: 'https://api.nasa.gov/',
     timestamp: new Date().toISOString()
   });
 });
 
-// Health check endpoint - Enhanced for debugging
+// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({ 
     success: true,
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    service: 'NASA API Backend',
+    service: 'NASA API Backend with AI',
     nasa_key_status: NASA_API_KEY !== 'DEMO_KEY' ? 'Real Key' : 'Demo Key',
+    ai_status: process.env.HF_API_TOKEN ? 'Available' : 'Unavailable - missing HF_API_TOKEN',
     environment: process.env.NODE_ENV,
     port: PORT,
     uptime: process.uptime(),
@@ -183,49 +210,320 @@ app.get('/api/cors-test', (req, res) => {
   });
 });
 
-// API Documentation endpoint
-app.get('/api', (req, res) => {
-  res.json({
-    success: true,
-    message: 'NASA API Endpoints',
-    endpoints: {
-      'GET /api/health': 'Health check and status',
-      'GET /api/cors-test': 'Test CORS configuration',
-      'GET /api/apod': 'Astronomy Picture of the Day (optional ?date=YYYY-MM-DD)',
-      'GET /api/apod/random': 'Random APOD from past year',
-      'GET /api/mars/photos': 'Mars Rover Photos (optional ?rover=curiosity&sol=1000&page=1)',
-      'GET /api/neo': 'Near Earth Objects (optional ?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD)',
-      'GET /api/search': 'NASA Image/Video Library Search (required ?q=search_term&media_type=image)'
-    },
-    timestamp: new Date().toISOString()
-  });
-});
+// =================
+// AI Routes
+// =================
 
-// NASA APOD API
-app.get('/api/apod', async (req, res, next) => {
-  try {
-    if (process.env.NODE_ENV !== 'test') {
-      console.log('Fetching APOD from NASA API...');
+// Use dedicated AI routes if available, otherwise use inline routes
+if (aiRoutes) {
+  app.use('/api/ai', aiRoutes);
+} else {
+  // Inline AI routes as fallback
+  console.log('🤖 Using inline AI routes');
+  
+  // AI Status endpoint
+  app.get('/api/ai/status', (req, res) => {
+    try {
+      const isAvailable = aiService.isAvailable();
+      
+      res.json({
+        success: true,
+        data: {
+          available: isAvailable,
+          message: isAvailable 
+            ? 'AI services are available' 
+            : 'AI services require HF_API_TOKEN environment variable',
+          services: {
+            imageAnalysis: isAvailable,
+            textSummarization: isAvailable,
+            sentimentAnalysis: isAvailable,
+            textComplexity: true, // Always available (local)
+            astronomyTips: true   // Always available (local)
+          }
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error checking AI status:', error.message);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to check AI service status',
+        timestamp: new Date().toISOString()
+      });
     }
-    const { date } = req.query;
+  });
+
+  // AI Health check
+  app.get('/api/ai/health', (req, res) => {
+    try {
+      const isAvailable = aiService.isAvailable();
+      
+      res.json({
+        success: true,
+        data: {
+          status: isAvailable ? 'healthy' : 'degraded',
+          available: isAvailable,
+          services: {
+            textComplexity: true,
+            astronomyTips: true,
+            sentimentAnalysis: isAvailable,
+            textSummarization: isAvailable,
+            imageAnalysis: isAvailable
+          },
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      res.status(503).json({
+        success: false,
+        error: 'AI health check failed',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // AI Analysis endpoint
+  app.post('/api/ai/analyze', async (req, res, next) => {
+    try {
+      const { imageUrl, text, topic } = req.body;
+      
+      if (!imageUrl && !text && !topic) {
+        return res.status(400).json({
+          success: false,
+          error: 'At least one of imageUrl, text, or topic is required'
+        });
+      }
+      
+      const analysis = await aiService.performComprehensiveAnalysis({
+        imageUrl,
+        text,
+        topic
+      });
+      
+      res.json({
+        success: true,
+        data: analysis,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // AI Image Analysis endpoint
+  app.post('/api/ai/image/analyze', async (req, res, next) => {
+    try {
+      const { imageUrl } = req.body;
+      
+      if (!imageUrl) {
+        return res.status(400).json({
+          success: false,
+          error: 'Image URL is required'
+        });
+      }
+      
+      const analysis = await aiService.analyzeImage(imageUrl);
+      
+      res.json({
+        success: true,
+        data: { analysis },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // AI Text Analysis endpoint
+  app.post('/api/ai/text/analyze', async (req, res, next) => {
+    try {
+      const { text } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({
+          success: false,
+          error: 'Text is required'
+        });
+      }
+      
+      const complexity = aiService.analyzeTextComplexity(text);
+      const sentiment = await aiService.analyzeSentiment(text);
+      const summary = text.length > 200 ? await aiService.summarizeText(text) : null;
+      
+      res.json({
+        success: true,
+        data: {
+          complexity,
+          sentiment,
+          summary
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/ai/text/complexity', (req, res) => {
+  try {
+    const { text } = req.body;
     
-    const params = {
-      api_key: NASA_API_KEY
+    if (!text) {
+      return res.status(400).json({
+        success: false,
+        error: 'Text is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    console.log('Analyzing text complexity for text length:', text.length);
+    
+    // Simple text complexity analysis (local, no API needed)
+    const words = text.split(/\s+/).length;
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+    const avgWordsPerSentence = sentences > 0 ? Math.round(words / sentences) : 0;
+    
+    let complexity = 'Simple';
+    if (avgWordsPerSentence > 15) complexity = 'Moderate';
+    if (avgWordsPerSentence > 25) complexity = 'Complex';
+    
+    const analysis = {
+      wordCount: words,
+      sentenceCount: sentences,
+      avgWordsPerSentence,
+      complexity
     };
     
-    if (date) {
-      params.date = date;
+    res.json({
+      success: true,
+      data: {
+        complexity: analysis,
+        timestamp: new Date().toISOString()
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Text complexity analysis error:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Text complexity analysis failed',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// AI Text Analysis endpoint
+app.post('/api/ai/text/analyze', async (req, res) => {
+  try {
+    const { text, summarize = true, maxSummaryLength = 150 } = req.body;
+    
+    if (!text) {
+      return res.status(400).json({
+        success: false,
+        error: 'Text is required',
+        timestamp: new Date().toISOString()
+      });
     }
+
+    console.log('Performing comprehensive text analysis...');
     
-    const response = await axios.get('https://api.nasa.gov/planetary/apod', { params });
+    // Text complexity (always available)
+    const words = text.split(/\s+/).length;
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+    const avgWordsPerSentence = sentences > 0 ? Math.round(words / sentences) : 0;
     
-    if (process.env.NODE_ENV !== 'test') {
-      console.log('APOD API Response received:', response.data.title);
+    let complexity = 'Simple';
+    if (avgWordsPerSentence > 15) complexity = 'Moderate';
+    if (avgWordsPerSentence > 25) complexity = 'Complex';
+    
+    const complexityAnalysis = {
+      wordCount: words,
+      sentenceCount: sentences,
+      avgWordsPerSentence,
+      complexity
+    };
+
+    // Try AI services if available
+    let sentiment = { label: 'NEUTRAL', score: 0.5 };
+    let summary = null;
+    
+    if (aiService && aiService.isAvailable()) {
+      try {
+        sentiment = await aiService.analyzeSentiment(text);
+        if (summarize && text.length > 200) {
+          summary = await aiService.summarizeText(text, maxSummaryLength);
+        }
+      } catch (aiError) {
+        console.warn('AI services failed, using fallback:', aiError.message);
+      }
+    } else {
+      console.log('AI services not available, using local analysis only');
     }
     
     res.json({
       success: true,
-      data: response.data,
+      data: {
+        complexity: complexityAnalysis,
+        sentiment,
+        summary,
+        originalLength: text.length,
+        timestamp: new Date().toISOString()
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Text analysis error:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Text analysis failed',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+
+  // AI Tips endpoint
+  app.get('/api/ai/tips/:topic', (req, res) => {
+    try {
+      const { topic } = req.params;
+      const tips = aiService.generateAstronomyTips(topic);
+      
+      res.json({
+        success: true,
+        data: { tips, topic },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get astronomy tips',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+}
+
+// =================
+// NASA API Routes
+// =================
+
+// Updated APOD endpoint (now includes AI analysis)
+app.get('/api/apod', async (req, res, next) => {
+  try {
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('Fetching APOD from NASA API with AI analysis...');
+    }
+    const { date } = req.query;
+    
+    const apodData = await nasaService.getAPOD(date);
+    
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('APOD API Response received:', apodData.title);
+    }
+    
+    res.json({
+      success: true,
+      data: apodData,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -233,11 +531,11 @@ app.get('/api/apod', async (req, res, next) => {
   }
 });
 
-// Random APOD (random date in past year)
+// Updated Random APOD endpoint
 app.get('/api/apod/random', async (req, res, next) => {
   try {
     if (process.env.NODE_ENV !== 'test') {
-      console.log('Fetching random APOD...');
+      console.log('Fetching random APOD with AI analysis...');
     }
     
     // Generate random date in the past year
@@ -245,20 +543,15 @@ app.get('/api/apod/random', async (req, res, next) => {
     randomDate.setDate(randomDate.getDate() - Math.floor(Math.random() * 365));
     const dateString = randomDate.toISOString().split('T')[0];
     
-    const response = await axios.get('https://api.nasa.gov/planetary/apod', {
-      params: {
-        api_key: NASA_API_KEY,
-        date: dateString
-      }
-    });
+    const apodData = await nasaService.getAPOD(dateString);
     
     if (process.env.NODE_ENV !== 'test') {
-      console.log('Random APOD received:', response.data.title);
+      console.log('Random APOD received:', apodData.title);
     }
     
     res.json({
       success: true,
-      data: response.data,
+      data: apodData,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -266,29 +559,23 @@ app.get('/api/apod/random', async (req, res, next) => {
   }
 });
 
-// Mars Rover Photos API
+// Updated Mars Rover Photos endpoint
 app.get('/api/mars/photos', async (req, res, next) => {
   try {
     if (process.env.NODE_ENV !== 'test') {
-      console.log('Fetching Mars rover photos...');
+      console.log('Fetching Mars rover photos with AI analysis...');
     }
     const { rover = 'curiosity', sol = 1000, page = 1 } = req.query;
     
-    const response = await axios.get(`https://api.nasa.gov/mars-photos/api/v1/rovers/${rover}/photos`, {
-      params: {
-        sol: sol,
-        page: page,
-        api_key: NASA_API_KEY
-      }
-    });
+    const marsData = await nasaService.getMarsRoverPhotos(rover, sol, page);
     
     if (process.env.NODE_ENV !== 'test') {
-      console.log(`Mars photos received: ${response.data.photos.length} photos`);
+      console.log(`Mars photos received: ${marsData.photos?.length || 0} photos`);
     }
     
     res.json({
       success: true,
-      data: response.data,
+      data: marsData,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -296,11 +583,11 @@ app.get('/api/mars/photos', async (req, res, next) => {
   }
 });
 
-// Near Earth Objects API
+// Updated Near Earth Objects endpoint
 app.get('/api/neo', async (req, res, next) => {
   try {
     if (process.env.NODE_ENV !== 'test') {
-      console.log('Fetching Near Earth Objects...');
+      console.log('Fetching Near Earth Objects with AI analysis...');
     }
     const { start_date, end_date } = req.query;
     
@@ -308,21 +595,15 @@ app.get('/api/neo', async (req, res, next) => {
     const startDate = start_date || new Date().toISOString().split('T')[0];
     const endDate = end_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     
-    const response = await axios.get('https://api.nasa.gov/neo/rest/v1/feed', {
-      params: {
-        start_date: startDate,
-        end_date: endDate,
-        api_key: NASA_API_KEY
-      }
-    });
+    const neoData = await nasaService.getNearEarthObjects(startDate, endDate);
     
     if (process.env.NODE_ENV !== 'test') {
-      console.log('NEO data received');
+      console.log('NEO data received with AI analysis');
     }
     
     res.json({
       success: true,
-      data: response.data,
+      data: neoData,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -330,11 +611,11 @@ app.get('/api/neo', async (req, res, next) => {
   }
 });
 
-// NASA Image and Video Library Search
+// Updated NASA Library Search endpoint
 app.get('/api/search', async (req, res, next) => {
   try {
     if (process.env.NODE_ENV !== 'test') {
-      console.log('Searching NASA library...');
+      console.log('Searching NASA library with AI analysis...');
     }
     const { q, media_type = 'image' } = req.query;
     
@@ -345,26 +626,25 @@ app.get('/api/search', async (req, res, next) => {
       });
     }
     
-    const response = await axios.get('https://images-api.nasa.gov/search', {
-      params: {
-        q: q,
-        media_type: media_type
-      }
-    });
+    const searchData = await nasaService.searchNasaLibrary(q, media_type);
     
     if (process.env.NODE_ENV !== 'test') {
-      console.log(`Library search results: ${response.data.collection?.items?.length || 0} items`);
+      console.log(`Library search results: ${searchData.collection?.items?.length || 0} items`);
     }
     
     res.json({
       success: true,
-      data: response.data,
+      data: searchData,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
     next(error);
   }
 });
+
+// =================
+// Error Handling
+// =================
 
 // Error handling middleware - Enhanced for CORS debugging
 app.use((err, req, res, next) => {
@@ -429,7 +709,17 @@ app.use('*', (req, res) => {
     path: req.originalUrl,
     method: req.method,
     message: 'This endpoint does not exist. Check /api for available endpoints.',
-    availableEndpoints: ['/api/health', '/api/cors-test', '/api/apod', '/api/apod/random', '/api/mars/photos', '/api/neo', '/api/search']
+    availableEndpoints: [
+      '/api/health', 
+      '/api/cors-test', 
+      '/api/apod', 
+      '/api/apod/random', 
+      '/api/mars/photos', 
+      '/api/neo', 
+      '/api/search',
+      '/api/ai/status',
+      '/api/ai/health'
+    ]
   });
 });
 
@@ -437,12 +727,15 @@ app.use('*', (req, res) => {
 let server;
 if (process.env.NODE_ENV !== 'test') {
   server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 NASA API Backend running on port ${PORT}`);
+    console.log(`🚀 NASA API Backend with AI running on port ${PORT}`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🔑 NASA API Key: ${NASA_API_KEY === 'DEMO_KEY' ? 'Using DEMO_KEY (limited)' : 'Using real API key'}`);
+    console.log(`🤖 AI Services: ${process.env.HF_API_TOKEN ? 'Available with HuggingFace token' : 'Unavailable - missing HF_API_TOKEN'}`);
     console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
     console.log(`📖 API Documentation: http://localhost:${PORT}/api`);
     console.log(`🧪 CORS Test: http://localhost:${PORT}/api/cors-test`);
+    console.log(`🤖 AI Status: http://localhost:${PORT}/api/ai/status`);
+    console.log(`🏥 AI Health: http://localhost:${PORT}/api/ai/health`);
     console.log(`✅ CORS configured for frontend: https://nasa-react-express-app-1.onrender.com`);
   });
 }
@@ -463,8 +756,5 @@ process.on('SIGINT', () => {
     });
   }
 });
-
-
-
 
 module.exports = app;

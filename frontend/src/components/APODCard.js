@@ -1,72 +1,41 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAPOD } from '../hooks/useNasaData';
+import { useAPOD, useAI } from '../hooks/useNasaData';
 import LoadingAnimation from './LoadingAnimation';
 import InteractiveButton from './InteractiveButton';
 import AIInsights from './AIInsights';
 import AIChat from './AIChat';
 import soundManager from '../utils/soundManager';
-import aiService from '../services/aiService';
 import './APODCard.css';
 
 const APODCard = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
-  const [aiAnalysis, setAiAnalysis] = useState(null);
-  const [aiLoading, setAiLoading] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const { data, loading, error, refetch, getRandomAPOD } = useAPOD();
-
-  // AI Analysis when new data loads
-  useEffect(() => {
-    if (data && data.media_type === 'image') {
-      analyzeWithAI();
-    }
-  }, [data]);
-
-  const analyzeWithAI = async () => {
-    if (!data || aiLoading) return;
-    
-    setAiLoading(true);
-    try {
-      const [imageDescription, sentiment, textAnalysis, tips] = await Promise.all([
-        aiService.analyzeImage(data.url),
-        aiService.analyzeSentiment(data.explanation),
-        Promise.resolve(aiService.analyzeTextComplexity(data.explanation)),
-        Promise.resolve(aiService.generateAstronomyTips(data.title + ' ' + data.explanation))
-      ]);
   
-      setAiAnalysis({
-        imageDescription,
-        sentiment,
-        textAnalysis,
-        tips,
-        summary: await aiService.summarizeText(data.explanation, 150)
-      });
-      
-      soundManager.play('success');
-    } catch (error) {
-      console.error('AI Analysis failed:', error);
-      soundManager.play('error');
-    } finally {
-      setAiLoading(false);
+  // Use updated hooks that include AI analysis from backend
+  const { data, loading, error, aiAnalysis, refetch, getRandomAPOD, analyzeWithAI } = useAPOD();
+  const { loading: aiLoading, status: aiStatus, analyze } = useAI();
+
+  // Show AI insights automatically when AI analysis is available
+  useEffect(() => {
+    if (aiAnalysis && Object.keys(aiAnalysis).length > 0) {
+      setShowAI(true);
     }
-  };
+  }, [aiAnalysis]);
 
   const handleDateChange = (event) => {
     const date = event.target.value;
     setSelectedDate(date);
     setImageLoaded(false);
-    setAiAnalysis(null);
     refetch(date);
     soundManager.play('whoosh');
   };
 
   const handleRandomClick = () => {
     setImageLoaded(false);
-    setAiAnalysis(null);
     getRandomAPOD();
     setSelectedDate('');
     soundManager.play('success');
@@ -89,9 +58,42 @@ const APODCard = () => {
   const toggleAI = () => {
     setShowAI(!showAI);
     soundManager.play('click');
-    if (!showAI && !aiAnalysis && data) {
-      analyzeWithAI();
+    
+    // If AI analysis is not available but AI service is available, try to analyze
+    if (!showAI && !aiAnalysis && data && aiStatus?.available) {
+      handleManualAIAnalysis();
     }
+  };
+
+  // Manual AI analysis for cases where backend didn't include it
+  const handleManualAIAnalysis = async () => {
+    if (!data || aiLoading) return;
+    
+    try {
+      await analyzeWithAI();
+      soundManager.play('success');
+    } catch (error) {
+      console.error('Manual AI Analysis failed:', error);
+      soundManager.play('error');
+    }
+  };
+
+  // Format AI analysis for the AIInsights component
+  const formatAIAnalysis = (analysis) => {
+    if (!analysis) return null;
+    
+    return {
+      imageDescription: analysis.imageAnalysis || 'No image analysis available',
+      sentiment: analysis.sentiment || { label: 'NEUTRAL', score: 0.5 },
+      textAnalysis: analysis.textAnalysis || {
+        wordCount: 0,
+        sentenceCount: 0,
+        avgWordsPerSentence: 0,
+        complexity: 'Unknown'
+      },
+      tips: analysis.tips || [],
+      summary: analysis.summary || data?.explanation
+    };
   };
 
   if (loading) return <LoadingAnimation type="space" message="Fetching cosmic imagery..." />;
@@ -133,22 +135,38 @@ const APODCard = () => {
         >
           Random APOD
         </InteractiveButton>
+
         <InteractiveButton
-  onClick={() => setShowChat(!showChat)}
-  variant={showChat ? 'success' : 'warning'}
-  icon="💬"
->
-  {showChat ? 'Hide Chat' : 'AI Chat'}
-</InteractiveButton>
+          onClick={() => setShowChat(!showChat)}
+          variant={showChat ? 'success' : 'warning'}
+          icon="💬"
+        >
+          {showChat ? 'Hide Chat' : 'AI Chat'}
+        </InteractiveButton>
+
         {data && (
           <InteractiveButton
             onClick={toggleAI}
             variant={showAI ? 'success' : 'warning'}
             icon="🤖"
-            disabled={aiLoading}
+            disabled={aiLoading || loading}
           >
             {aiLoading ? 'AI Analyzing...' : showAI ? 'Hide AI' : 'AI Insights'}
           </InteractiveButton>
+        )}
+
+        {/* AI Status Indicator */}
+        {aiStatus && (
+          <motion.div
+            className="ai-status"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            <span className={`status-indicator ${aiStatus.available ? 'available' : 'unavailable'}`}>
+              🤖 AI: {aiStatus.available ? 'Ready' : 'Unavailable'}
+            </span>
+          </motion.div>
         )}
       </motion.div>
 
@@ -196,17 +214,25 @@ const APODCard = () => {
             <AnimatePresence>
               {showAI && (
                 <AIInsights 
-                  analysis={aiAnalysis} 
+                  analysis={formatAIAnalysis(aiAnalysis)} 
                   loading={aiLoading}
-                  onRefresh={analyzeWithAI}
+                  onRefresh={handleManualAIAnalysis}
+                  available={aiStatus?.available}
                 />
               )}
             </AnimatePresence>
+
+            {/* AI Chat Panel */}
             <AnimatePresence>
-  {showChat && (
-    <AIChat data={data} />
-  )}
-</AnimatePresence>
+              {showChat && (
+                <AIChat 
+                  data={data} 
+                  aiAnalysis={aiAnalysis}
+                  available={aiStatus?.available}
+                />
+              )}
+            </AnimatePresence>
+
             <motion.div 
               className="apod-media"
               initial={{ opacity: 0, scale: 0.9 }}
@@ -292,23 +318,48 @@ const APODCard = () => {
               </motion.p>
             </motion.div>
 
+            {/* AI Summary Section */}
+            {aiAnalysis?.summary && aiAnalysis.summary !== data.explanation && (
+              <motion.div
+                className="ai-summary"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.85 }}
+              >
+                <motion.h4
+                  whileHover={{ color: '#00d4ff' }}
+                  transition={{ duration: 0.3 }}
+                >
+                  🤖 AI Summary
+                </motion.h4>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.9, duration: 0.8 }}
+                >
+                  {aiAnalysis.summary}
+                </motion.p>
+              </motion.div>
+            )}
+
             {data.copyright && (
               <motion.p 
                 className="apod-copyright"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.9 }}
+                transition={{ delay: 0.95 }}
               >
                 📸 Copyright: {data.copyright}
               </motion.p>
             )}
 
-            {data.hdurl && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1 }}
-              >
+            <motion.div
+              className="action-buttons"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1 }}
+            >
+              {data.hdurl && (
                 <InteractiveButton
                   onClick={() => window.open(data.hdurl, '_blank')}
                   variant="success"
@@ -316,8 +367,20 @@ const APODCard = () => {
                 >
                   View in HD
                 </InteractiveButton>
-              </motion.div>
-            )}
+              )}
+
+              {/* Manual AI Analysis Button */}
+              {aiStatus?.available && !aiAnalysis && (
+                <InteractiveButton
+                  onClick={handleManualAIAnalysis}
+                  variant="warning"
+                  icon="🤖"
+                  disabled={aiLoading}
+                >
+                  {aiLoading ? 'Analyzing...' : 'Analyze with AI'}
+                </InteractiveButton>
+              )}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -362,7 +425,19 @@ const APODCard = () => {
               >
                 <h3>{data.title}</h3>
                 <p>{data.date}</p>
-            
+                
+                {/* Show AI image analysis in fullscreen if available */}
+                {aiAnalysis?.imageAnalysis && (
+                  <motion.div
+                    className="fullscreen-ai-analysis"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    <h4>🤖 AI Analysis</h4>
+                    <p>{aiAnalysis.imageAnalysis}</p>
+                  </motion.div>
+                )}
               </motion.div>
             </motion.div>
           </motion.div>
