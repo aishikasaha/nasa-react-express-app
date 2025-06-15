@@ -94,27 +94,53 @@ class AIService {
     }
   }
 
-  // Sentiment analysis for text
   async analyzeSentiment(text) {
     try {
       if (!this.API_TOKEN) {
         return { label: 'NEUTRAL', score: 0.5 };
       }
       
-      const response = await axios.post(
-        `${this.HF_API_URL}/cardiffnlp/twitter-roberta-base-sentiment-latest`,
-        { inputs: text },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.API_TOKEN}`
-          },
-          timeout: 30000
-        }
-      );
+      const response = await fetch(`${this.HF_API_URL}/nlptown/bert-base-multilingual-uncased-sentiment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.API_TOKEN}`
+        },
+        body: JSON.stringify({ inputs: text }),
+        timeout: 30000
+      });
       
-      return response.data[0] || { label: 'NEUTRAL', score: 0.5 };
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform the star rating response to sentiment format
+      if (Array.isArray(data) && data.length > 0) {
+        // Find highest scoring item
+        const highest = data.reduce((max, item) => 
+          item.score > max.score ? item : max
+        );
+        
+        // Convert star ratings to sentiment labels
+        const starToSentiment = (label, score) => {
+          if (label.includes('5 stars') || label.includes('4 stars')) {
+            return { label: 'POSITIVE', score };
+          } else if (label.includes('1 star') || label.includes('2 stars')) {
+            return { label: 'NEGATIVE', score };
+          } else {
+            return { label: 'NEUTRAL', score };
+          }
+        };
+        
+        return starToSentiment(highest.label, highest.score);
+      }
+      
+      return { label: 'NEUTRAL', score: 0.5 };
+      
     } catch (error) {
+      console.error('AI Sentiment Analysis Error:', error.message);
       return { label: 'NEUTRAL', score: 0.5 };
     }
   }
