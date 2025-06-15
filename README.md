@@ -6,6 +6,7 @@
 [![NASA API](https://img.shields.io/badge/NASA-API-orange.svg)](https://api.nasa.gov/)
 [![AI Powered](https://img.shields.io/badge/AI-Powered-purple.svg)](https://huggingface.co/)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[[AUTHOR: AISHIKA SAHA]]
 
 > **Explore the cosmos with NASA's real data through an immersive, AI-enhanced, interactive space exploration experience.**
 
@@ -203,8 +204,8 @@ Before you begin, ensure you have the following installed:
 
 ### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/your-username/nasa-data-explorer.git
-cd nasa-data-explorer
+git clone https://github.com/aishikasaha/nasa-react-express-app.git
+cd nasa-react-express-app
 ```
 
 ### 2️⃣ Get NASA API Key
@@ -219,8 +220,9 @@ cd nasa-data-explorer
 cat > backend/.env << EOF
 PORT=5001
 NODE_ENV=development
-NASA_API_KEY=your_nasa_api_key_here
+NASA_API_KEY=your_token
 FRONTEND_URL=http://localhost:3000
+HF_API_TOKEN=your_token
 EOF
 
 # Frontend environment  
@@ -264,14 +266,17 @@ nasa-data-explorer/
 ├── 📂 backend/                     # Express.js backend server
 │   ├── 📂 controllers/             # Route handlers
 │   │   ├── 📄 apodController.js    # APOD endpoint logic
+│   │   ├── 📄 aiController.js      # AI   endpoint logic
 │   │   ├── 📄 marsController.js    # Mars rover endpoints
 │   │   └── 📄 neoController.js     # Near Earth Objects
 │   ├── 📂 routes/                  # API route definitions
 │   │   ├── 📄 apod.js              # APOD routes
+│   │   ├── 📄 aiRoutes.js          # Ai routes
 │   │   ├── 📄 mars.js              # Mars rover routes
 │   │   └── 📄 neo.js               # NEO routes
 │   ├── 📂 services/                # Business logic
 │   │   └── 📄 nasaService.js       # NASA API integration
+│   │   └── 📄 aiService.js         # ai API integration
 │   ├── 📂 tests/                   # Test files
 │   │   ├── 📂 controllers/
 │   │   ├── 📂 integration/
@@ -305,7 +310,7 @@ nasa-data-explorer/
 │   │   │   └── 📄 useNasaData.js   # Data fetching hooks
 │   │   ├── 📂 services/            # API integration
 │   │   │   ├── 📄 api.js           # HTTP client setup
-│   │   │   └── 📄 aiService.js     # AI functionality
+│   │   │   └── 📄 aiApi.js         # AI api client setup
 │   │   ├── 📂 styles/              # Styling system
 │   │   │   └── 📄 fonts.css        # Typography system
 │   │   ├── 📂 utils/               # Utility functions
@@ -335,6 +340,7 @@ PORT=5001                           # Server port
 NODE_ENV=development                # Environment (development/production)
 NASA_API_KEY=your_api_key_here     # NASA API key (required)
 FRONTEND_URL=http://localhost:3000  # Frontend URL for CORS
+HF_API_TOKEN=your_hugging_face_token
 ```
 
 #### Frontend Configuration (`frontend/.env`)
