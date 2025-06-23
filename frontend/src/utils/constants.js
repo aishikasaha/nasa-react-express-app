@@ -1,7 +1,5 @@
 export const ROVERS = [
   { value: 'curiosity', label: 'Curiosity', maxSol: 4000 },
-  { value: 'opportunity', label: 'Opportunity', maxSol: 5111 },
-  { value: 'spirit', label: 'Spirit', maxSol: 2208 },
   { value: 'perseverance', label: 'Perseverance', maxSol: 1000 }
 ];
 
